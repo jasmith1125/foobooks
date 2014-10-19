@@ -1,35 +1,37 @@
 <!DOCTYPE html>
 <html>
-<html class="no-js" lang="en">
 <head>
 
+    <title>@yield('title','Foobooks')</title>
     <meta charset='utf-8'>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@yield('title', 'Foobooks')</title>
-    <link rel='stylesheet' href='' type='text/css'>
-    {{ HTML::style('css/foundation.css') }}
-	{{ HTML::style('css/app.css') }}
-	{{ HTML::script('js/vendor/modernizr.js') }}
+
+    <link href="//netdna.bootstrapcdn.com/bootswatch/3.1.1/flatly/bootstrap.min.css" rel="stylesheet">
+    <link rel='stylesheet' href='/css/foobooks.css' type='text/css'>
 
     @yield('head')
 
+    
 </head>
-
 <body>
-<div class='row'>
-<div class="large-12 large-centered small-12 small-centered columns">
 
-<img src='../img/foobooks-logo.png' alt='Foobooks logo'>
+    
+    <img src="../img/foobooks-logo.png" class="img-responsive">
+    <a href='https://github.com/susanBuck/foobooks'>View on Github</a>
 
-@yield('body')
+    <nav>
+        <ul>
+            <li><a href='/list'>List All</a></li>
+            <li><a href='/add'>+ Add Book</a></li>
+        </ul>
+    </nav>
+    
+    @yield('content')
 
-@yield('scripts')
-</div>
-</div>
-   <script src="js/vendor/jquery.js"></script>
-    <script src="js/foundation.min.js"></script>
-    <script>
-      $(document).foundation();
-    </script> 
+    @yield('body')
+    
 </body>
 </html>
+
+
+
+

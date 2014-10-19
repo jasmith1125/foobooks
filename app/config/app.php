@@ -78,7 +78,7 @@ return array(
 	|
 	*/
 
-	'key' => 'IgRMFS1JekMtjVSVwwFKazDmkSj9baZQ',
+	'key' => 'zPHTZSqDjzoxPvEOcGEPJ1MK6gWpKZd6',
 
 	'cipher' => MCRYPT_RIJNDAEL_128,
 
@@ -188,7 +188,8 @@ return array(
 		'URL'             => 'Illuminate\Support\Facades\URL',
 		'Validator'       => 'Illuminate\Support\Facades\Validator',
 		'View'            => 'Illuminate\Support\Facades\View',
-		'Pre'				=>'Paste\Pre',
+		'Pre'			  => 'Paste\Pre',
+		'RndStr'	      => 'Xi\RandomString\RandomStringGenerator',
 
 	),
 

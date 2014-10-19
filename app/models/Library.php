@@ -1,0 +1,95 @@
+<?php
+
+/* object-oriented programming; "Library" is an object */
+
+class Library {
+
+	// Properties (Variables)
+	
+	// Arrays
+	private $books; // public is an access modifier (also private and protected)
+
+	// String 
+	private $path; //can set to private because getter and setter are public (below)
+
+	// Methods (Functions)
+	public function setPath($path){
+		$this->path = $path;
+	}
+
+	public function getPath() {
+		return $this->path;
+
+	}
+
+	public function getBooks() {
+		//Get the file
+		$books = File::get(app_path().'/database/books.json');
+
+		// Convert to an array
+		$books = json_decode($books, true);
+
+		//change books relative to the object yet to be created
+		$this->books = $books;
+		return $this->books;
+	}
+
+	/**
+	* @param String $query
+	* @return Array $results
+	*/
+	public function search($query) {
+
+		# If any books match our query, they'll get stored in this array
+		$results = Array();
+
+		# Loop through the books looking for matches
+		foreach($this->books as $title => $book) {
+					
+			# First compare the query against the title
+			if(stristr($title,$query)) {
+			
+				# There's a match - add this book the the $results array
+				$results[$title] = $book;
+			}
+			# Then compare the query against all the attributes of the book (author, tags, etc.)
+			else {
+						
+				if(self::search_book_attributes($book,$query)) {
+					# There's a match - add this book the the $results array
+					$results[$title] = $book;
+				}
+			}
+		}
+
+		return $results;
+
+	}
+
+	/**
+	* Recursive helper function to above function. Resursively search through a book's attributes looking for a query match
+	* @param Array $attributes
+	* @param String $query
+	* @return Boolean
+	*/
+	private function search_book_attributes($attributes,$query) { 
+	    
+		foreach($attributes as $k => $value) { 
+		    
+		  	# Dig deeper
+		    if (is_array($value)) {
+		    	return self::search_book_attributes($value,$query);
+		    }
+				
+				if(stristr($value,$query)) {
+					return true;
+				}             
+		} 
+
+		return false;
+
+	}
+
+}
+
+/* $this is a keyword
