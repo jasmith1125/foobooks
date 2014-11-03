@@ -7,7 +7,7 @@ return array(
 		'mysql' => array(
 			'driver' 	=> 'mysql',
 			'host'		=> 'localhost',
-			'database 	=> 'foobooks',
+			'database' 	=> 'foobooks',
 			'username' 	=> 'root',
 			'password' 	=>	'CFwmvpPAN0',
 
