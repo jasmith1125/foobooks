@@ -16,10 +16,6 @@
 	</form>
 
 	{{ Form::open(array('url' => '/list', 'method' => 'GET')) }}
-		
-		{{ Form::label('query', 'Search') }}
-		
-		{{ Form::text('query') }}
 
 		{{ Form::submit('Search') }}
 
