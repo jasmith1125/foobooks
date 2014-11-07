@@ -7,7 +7,8 @@
 		"laravel/framework": "4.2.*",
 		"paste/pre": "dev-master",
 		"xi/randomstring": "dev-master",
-		"badcow/lorem-ipsum": "dev-master"
+		"barryvdh/laravel-debugbar": "1.8.0",
+		"fzaninotto/faker": "1.4.0"
 	},
 	"autoload": {
 		"classmap": [

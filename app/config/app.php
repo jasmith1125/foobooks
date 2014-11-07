@@ -121,6 +121,7 @@ return array(
 		'Illuminate\Validation\ValidationServiceProvider',
 		'Illuminate\View\ViewServiceProvider',
 		'Illuminate\Workbench\WorkbenchServiceProvider',
+		'Barryvdh\Debugbar\ServiceProvider',
 
 	),
 
@@ -190,6 +191,8 @@ return array(
 		'View'            => 'Illuminate\Support\Facades\View',
 		'Pre'			  => 'Paste\Pre',
 		'RndStr'	      => 'Xi\RandomString\RandomStringGenerator',
+		'Debugbar' 		=> 'Barryvdh\Debugbar\Facade',
+		'Faker'			 => 'Faker\Factory',
 
 	),
 
