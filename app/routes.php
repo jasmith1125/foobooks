@@ -7,7 +7,7 @@ Route::get('/test3', function() {
 #This wil output a JSON string (a collection)
     //echo $books;
     foreach($books as $book) {
-        echo $book['title']."<br>";
+        echo $book['title']."<br>"; //$book->title (using as object) would get same result
     }
 });
 
@@ -250,13 +250,13 @@ Route::get('/list/{format?}', function($format = 'html') {
 	//$query = $_GET['query']; //traditional php for next line of laravel-specific code
 	$query = Input::get('query'); //this "get" not specific to GET method, willwork with POST
 
-	$library = new Library();
-	$library->setPath(app_path().'/database/books.json');
-	$books = $library->getBooks();
-
 	if($query) {
-		$books = $library->search($query);
+		$books = Book::where('author', 'LIKE', "%$query%")->
+        orWhere('title', 'LIKE', "%$query%")->get();
 	}
+    else {
+        $books = Book::all();
+    }
 
     if ($format == 'json') {
         return 'JSON Version';
@@ -268,7 +268,6 @@ Route::get('/list/{format?}', function($format = 'html') {
 	else {
 		return View::make('list')
 		->with('name', 'Joyce')
-		->with('last_name', 'Smith')
 		->with('books', $books)
 		->with('query', $query);
 		/* above shows how to use 'with' to pass information to the view. With creates a variable within view called 'name' that will be set to whatever second parameter is. Can pass string, object, array, integer--any data type. */
@@ -286,10 +285,19 @@ Route::get('/add', function() {
 });
 
 // Process form for a new book
-Route::post('/add', function() {
+Route::post('/add', array('before'=>'csrf',
+    function() {
 
+    var_dump($_POST);
 
-});
+    $book = new Book();
+    $book->title = $_POST['title']; /* same as $book->title = Input::get('title'); */
+ /* can pass multiple fields in array */
+    $book->save();
+    //can use a for loop to add multiple books
+
+    return Redirect::to('/list');
+}));
 
 
 
