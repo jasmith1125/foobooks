@@ -1,18 +1,5 @@
 <?php
 
-Route::get('/test', function() {
-
-    # w/o eager loading: 7 Queries
-    //$books = Book::with('author')->get();
-    # w/ eager loading: 3 Queries
-    #$books = Book::with('author')->with('tags')->get();
-    $books = Book::with('author')->get();
-    foreach($books as $book) {
-        echo $book->title."<br>";
-        echo $book->author->name;
-        echo "<br><br>";
-    }
-});
 
 //Using eloquent to read data from database, get one book
 Route::get('/practice-reading-one-book', function() {
@@ -277,6 +264,42 @@ Route::get('/list/{format?}', function($format = 'html') {
 		 	
 	}
 });
+
+Route::get('/test', function() {
+
+   
+/*
+   $author = new Author();
+    $author->name = 'Sylvia Plath';
+    $author->save();
+
+    $book = new Book();
+    $book->title = 'The Bell Jar';
+    $book->author_id = $author->id; //connects foreign key to author
+    $book->save(); 
+
+    $author = new Author();
+    $author->name = 'Maya Angelou';
+    $author->save();
+
+    $book = new Book();
+    $book->title = 'I Know Why the Caged Bird Sings';
+    $book->author_id = $author->id; //connects foreign key to author
+    $book->save(); */
+
+     # w/o eager loading: 7 Queries
+    //$books = Book::with('author')->get();
+    # w/ eager loading: 3 Queries
+    #$books = Book::with('author')->with('tags')->get();
+
+     $books = Book::with('author')->get();
+    foreach($books as $book) {
+        echo $book->title."<br>";
+        echo $book->author->name;
+        echo "<br><br>"; 
+    } 
+}); 
+
 
 
 
