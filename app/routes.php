@@ -1,13 +1,16 @@
 <?php
 
-Route::get('/test3', function() {
+Route::get('/test', function() {
 
-    $books = Book::all();
-
-#This wil output a JSON string (a collection)
-    //echo $books;
+    # w/o eager loading: 7 Queries
+    //$books = Book::with('author')->get();
+    # w/ eager loading: 3 Queries
+    #$books = Book::with('author')->with('tags')->get();
+    $books = Book::with('author')->get();
     foreach($books as $book) {
-        echo $book['title']."<br>"; //$book->title (using as object) would get same result
+        echo $book->title."<br>";
+        echo $book->author->name;
+        echo "<br><br>";
     }
 });
 
@@ -146,7 +149,7 @@ Route::get('/seed', function() {
     echo Paste\Pre::render($books,'');
 });
 
-/* example of database query, lecture 9 */
+/* example of database query, lecture 9 
 Route::get('/test', function() {
 # Returns and object of books
 $books = DB::table('books')->get();
@@ -154,16 +157,16 @@ $books = DB::table('books')->get();
 foreach ($books as $book) {
     echo $book->title."<br>";
     }
-});
+});*/
 
-/* example of database query with where filter, lecture 9 */
+/* example of database query with where filter, lecture 9 
 Route::get('/test2', function() {
     $books = DB::table('books')->where('author', 'LIKE', '%Scott%')->get();
 
 foreach($books as $book) {
     echo $book->title;
 }
-});
+});*/
 
 # /app/routes.php
 Route::get('/debug', function() {
@@ -284,13 +287,14 @@ Route::get('/add', function() {
 
 });
 
-// Process form for a new book
+// Process form for a new book, check that csrf token is present and valid
 Route::post('/add', array('before'=>'csrf',
     function() {
 
     var_dump($_POST);
 
     $book = new Book();
+    DB::statement('SET FOREIGN_KEY_CHECKS=0');
     $book->title = $_POST['title']; /* same as $book->title = Input::get('title'); */
  /* can pass multiple fields in array */
     $book->save();
@@ -303,14 +307,27 @@ Route::post('/add', array('before'=>'csrf',
 
 
 // Display the form to edit a book
-Route::get('/edit/{title}', function() {
-
+Route::get('/edit/{title}', function($title) {
+        
+        return View::make('edit');
 
 });
 
 // Process form for a edit book
 Route::post('/edit/', function() {
-
+   # First get a book to update
+    $book = Book::where('author', 'LIKE', '%query%')->first();
+    # If we found the book, update it
+    if($book) {
+    # Give it a different title
+    $book->title = $_POST['title'];
+    # Save the changes
+    $book->save();
+    return "Update complete; check the database to see if your update worked...";
+    }
+    else {
+    return "Book not found, can't update.";
+    }
 
 });
 

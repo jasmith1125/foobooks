@@ -1,13 +1,13 @@
 @extends('_master')
 
 @section('title')
-	Add a new book
+	Edit a book you have added
 @stop
 
 @section('content')
-	<h1>Add a new book</h1>
+	<h1>Edit a book</h1>
 
-	{{ Form::open(array('url' => '/add')) }}
+	{{ Form::open(array('url' => '/edit')) }}
 
 		{{ Form::text('title') }}
 

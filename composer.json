@@ -18,7 +18,11 @@
 			"app/database/migrations",
 			"app/database/seeds",
 			"app/tests/TestCase.php",
-			"app/models/Library.php"
+			"app/models/Library.php",
+			"app/models/Author.php",
+			"app/models/Book.php",
+			"app/models/Tag.php",
+			"app/models/User.php"
 		]
 	},
 	"scripts": {
