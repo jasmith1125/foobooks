@@ -18,7 +18,7 @@
 	@foreach($books as $book)
 		<section class='book'>
 			<h2>{{ $book['title'] }}</h2>
-			{{ $book['author'] }} ({{$book['published']}})
+			{{ $book['author->name'] }} ({{$book['published']}})
 
 			
 			<img src='{{ $book['cover'] }}'>

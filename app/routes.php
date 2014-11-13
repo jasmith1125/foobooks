@@ -235,40 +235,43 @@ Route::get('/', function() {
 
 // List all books / search
 // function($format = 'html') defaults the view to html
+# List all books / search
+# List all books / search
 Route::get('/list/{format?}', function($format = 'html') {
-	
-	//$query = $_GET['query']; //traditional php for next line of laravel-specific code
-	$query = Input::get('query'); //this "get" not specific to GET method, willwork with POST
-
-	if($query) {
-		$books = Book::where('author', 'LIKE', "%$query%")->
-        orWhere('title', 'LIKE', "%$query%")->get();
-	}
+    $query = Input::get('query');
+    if($query) {
+    $books = Book::where('author','LIKE', "%$query%")->orWhere('title','LIKE',"%$query%")->get();
+    }
     else {
-        $books = Book::all();
+    $books = Book::all();
     }
-
-    if ($format == 'json') {
-        return 'JSON Version';
+    if($format == 'json') {
+    return 'JSON Version';
     }
-    /* strtolower makes whatever is typed in URL by user lowercase because the URL is case sensitive */
-    elseif (strtolower($format) == 'pdf') { 
-        return 'PDF Version';
-	}
-	else {
-		return View::make('list')
-		->with('name', 'Joyce')
-		->with('books', $books)
-		->with('query', $query);
-		/* above shows how to use 'with' to pass information to the view. With creates a variable within view called 'name' that will be set to whatever second parameter is. Can pass string, object, array, integer--any data type. */
-		 	
-	}
+    elseif($format == 'pdf') {
+    return 'PDF Version;';
+    }
+    else {
+    return View::make('list')
+    ->with('books', $books)
+    ->with('query', $query);
+    }
 });
 
 Route::get('/test', function() {
 
-   
-/*
+  /* $author = new Author();
+    $author->name = 'F. Scott Fitzgerald';
+    $author->save();
+
+    $book = new Book();
+    $book->title = 'The Great Gatsby';
+    $book->author_id = $author->id; //connects foreign key to author
+    $book->published = 1925;
+    $book->cover = 'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG';
+    $book->purchase_link = 'http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565';
+    $book->save(); 
+
    $author = new Author();
     $author->name = 'Sylvia Plath';
     $author->save();
@@ -276,6 +279,9 @@ Route::get('/test', function() {
     $book = new Book();
     $book->title = 'The Bell Jar';
     $book->author_id = $author->id; //connects foreign key to author
+    $book->published = 1963;
+    $book->cover = 'http://img1.imagesbn.com/p/9780061148514_p0_v2_s114x166.JPG';
+    $book->purchase_link = 'http://www.barnesandnoble.com/w/bell-jar-sylvia-plath/1100550703?ean=9780061148514';
     $book->save(); 
 
     $author = new Author();
@@ -285,19 +291,44 @@ Route::get('/test', function() {
     $book = new Book();
     $book->title = 'I Know Why the Caged Bird Sings';
     $book->author_id = $author->id; //connects foreign key to author
-    $book->save(); */
+    $book->published = 1969;
+    $book->cover = 'http://img1.imagesbn.com/p/9780345514400_p0_v1_s114x166.JPG';
+    $book->purchase_link = 'http://www.barnesandnoble.com/w/i-know-why-the-caged-bird-sings-maya-angelou/1100392955?ean=9780345514400';
+    $book->save();  
 
      # w/o eager loading: 7 Queries
     //$books = Book::with('author')->get();
     # w/ eager loading: 3 Queries
-    #$books = Book::with('author')->with('tags')->get();
+    #$books = Book::with('author')->with('tags')->get(); */
 
-     $books = Book::with('author')->get();
+   $books = Book::with('author', 'tags')->get();
     foreach($books as $book) {
         echo $book->title."<br>";
-        echo $book->author->name;
+        echo $book->author->name."<br>";
+        foreach($book->tags as $tag) {
+            echo $tag->name."<br>";
+        }
         echo "<br><br>"; 
     } 
+
+   /* $author = new Author();
+
+    $author->name = 'Dayle Reese';
+    $author->save();
+
+    $book = new Book();
+    $book->title = 'CodeBright';
+    $book->author_id = $author->id;
+
+    $book->save(); */
+
+  /*  $tag = new Tag;
+    $tag->name = 'novel';
+    $tag->save();
+
+    $book = Book::first();
+    $book->tags()->attach($tag); */
+
 }); 
 
 
@@ -339,7 +370,7 @@ Route::get('/edit/{title}', function($title) {
 // Process form for a edit book
 Route::post('/edit/', function() {
    # First get a book to update
-    $book = Book::where('author', 'LIKE', '%query%')->first();
+    $book = Book::where('book', 'LIKE', '%query%')->first();
     # If we found the book, update it
     if($book) {
     # Give it a different title

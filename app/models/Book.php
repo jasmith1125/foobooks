@@ -8,8 +8,8 @@ class Book extends Eloquent {
 	return $this->belongsTo('Author');
 	}
 
-	/*public function tags() {
+	public function tags() {
 	# Books belong to many Tags
 	return $this->belongsToMany('Tag');
-	}*/
+	}
 }
