@@ -1,42 +1,288 @@
 <?php
 
+/*
+Table of contents:
 
-//Using eloquent to read data from database, get one book
-Route::get('/practice-reading-one-book', function() {
+0. /test
+1. Routes specific to the functionality of foobooks
+2. Practice and examples
+3. Debugging and testing
+4. Helpers
+*/
 
-    $book = Book::where('author', 'LIKE', '%Scott%')->first();
 
-    if($book) {
-        return $book->title;
-    }
-    else {
-        return 'Book not found.';
-    }
+/*-------------------------------------------------------------------------------------------------
+0. Test
+Used for demos during lecture
+-------------------------------------------------------------------------------------------------*/
+Route::get('/test', function() {
 
-});
+    # w/o eager loading: 7 Queries
+    //$books = Book::with('author')->get();
 
-//Using eloquent to read data from database, chain constraints to choose select books
-Route::get('/practice-reading-some-books', function() {
+    # w/ eager loading: 3 Queries
+    #$books = Book::with('author')->with('tags')->get();
+    $books = Book::with('author', 'tags')->get();
 
-    $books = Book::where('author', 'LIKE', '%Scott%')
-    ->orWhere('author', 'LIKE', '%Maya%')
-    ->get();
-
-    # Make sure we have results before trying to print them...
-    if($books->isEmpty() != TRUE) {
-
-        # Typically we'd pass $books to a View, but for quick and dirty demonstration, let's just output here...
-        foreach($books as $book) {
-            echo $book->title.'<br>';
+    foreach($books as $book) {
+        echo $book->title."<br>";
+        echo $book->author->name."<br>";
+        foreach($book->tags as $tag) {
+            echo "<em>".$tag->name."</em><br>";
         }
-    }
-    else {
-        return 'No books found';
+        echo "<br><br>";
     }
 
 });
 
-//Using eloquent to read data from database, get all books
+
+/*-------------------------------------------------------------------------------------------------
+1. Routes specific to the functionality of foobooks
+-------------------------------------------------------------------------------------------------*/
+// Homepage
+Route::get('/', function() {
+
+    return View::make('index');
+
+});
+
+
+# User: Sign up
+Route::get('/signup',
+    array(
+        'before' => 'guest',
+        function() {
+            return View::make('signup');
+        }
+    )
+);
+
+# User: Sign up
+Route::post('/signup',
+    array(
+        'before' => 'csrf',
+        function() {
+
+            $user = new User;
+            $user->email    = Input::get('email');
+            $user->password = Hash::make(Input::get('password'));
+
+            # Try to add the user
+            try {
+                $user->save();
+            }
+            # Fail
+            catch (Exception $e) {
+                return Redirect::to('/signup')
+                    ->with('flash_message', 'Sign up failed; please try again.')->withInput();
+            }
+
+            # Log the user in
+            Auth::login($user);
+
+            return Redirect::to('/list')
+                ->with('flash_message', 'Welcome to Foobooks!');
+
+        }
+    )
+);
+
+
+# User: Log in
+Route::get('/login',
+    array(
+        'before' => 'guest',
+        function() {
+            return View::make('login');
+        }
+    )
+);
+
+
+# User: Log in
+Route::post('/login',
+    array(
+        'before' => ['csrf','guest'],
+        function() {
+
+            $credentials = Input::only('email', 'password');
+
+            if (Auth::attempt($credentials, $remember = true)) {
+                return Redirect::intended('/')
+                    ->with('flash_message', 'Welcome Back!');
+            }
+            else {
+                return Redirect::to('/login')
+                    ->with('flash_message', 'Log in failed; please try again.');
+            }
+
+            return Redirect::to('login');
+        }
+    )
+);
+
+
+# User: Logout
+Route::get('/logout', function() {
+
+    # Log out
+    Auth::logout();
+
+    # Send them to the homepage
+    return Redirect::to('/');
+
+});
+
+
+# List all books / search
+Route::get('/list/{format?}', function($format = 'html') {
+
+    $query = Input::get('query');
+
+    # If there is a query, search the library with that query
+    if($query) {
+
+        # Eager load tags and author
+        $books = Book::with('tags','author')
+        ->whereHas('author', function($q) use($query) {
+            $q->where('name', 'LIKE', "%$query%");
+        })
+        ->orWhereHas('tags', function($q) use($query) {
+            $q->where('name', 'LIKE', "%$query%");
+        })
+        ->orWhere('title', 'LIKE', "%$query%")
+        ->orWhere('published', 'LIKE', "%$query%")
+        ->get();
+
+    }
+    # Otherwise, just fetch all books
+    else {
+        $books = Book::with('tags','authors');
+    }
+
+    if($format == 'json') {
+        return 'JSON Version';
+    }
+    elseif($format == 'pdf') {
+        return 'PDF Version;';
+    }
+    else {
+        return View::make('list')
+            ->with('books', $books)
+            ->with('query', $query);
+
+    }
+
+});
+
+
+
+
+// Display the form for a new book
+Route::get('/add', function() {
+
+    $authors = Author::getIdNamePair();
+
+    return View::make('add')->with('authors',$authors);
+
+});
+
+
+// Process form for a new book
+Route::post('/add',
+    array('before'=>'csrf',
+    function() {
+
+        var_dump($_POST);
+
+        $book = new Book();
+        $book->title = $_POST['title'];
+        //$book->title = Input::get('title');
+
+        $book->save();
+
+        return Redirect::to('/list');
+
+    }
+    )
+);
+
+
+// Display the form to edit a book
+Route::get('/edit/{id?}', array('before'=>'auth',function($id = null) {
+
+    try {
+        $book = Book::findOrFail($id);
+    }
+    catch(exception $e) {
+        return Redirect::to('/list')->with('flash_message', 'Book not found');
+    }
+
+    return View::make('edit')
+        ->with('book', $book);
+
+}));
+
+
+// Process form for a edit book
+Route::post('/edit', function() {
+
+    try {
+        $book = Book::findOrFail(Input::get('id'));
+    }
+    catch(exception $e) {
+        return Redirect::to('/list')->with('flash_message', 'Book not found');
+    }
+
+    # http://laravel.com/docs/4.2/eloquent#mass-assignment
+    $book->fill(Input::all());
+    $book->save();
+
+    return Redirect::to('/list')->with('flash_message','Your changes have been saved.');
+
+});
+
+
+
+
+/*-------------------------------------------------------------------------------------------------
+2. Practice and examples
+-------------------------------------------------------------------------------------------------*/
+// Test route to load and output books
+Route::get('/data', function() {
+
+    $library = new Library();
+
+    $library->setPath(app_path().'/database/books.json');
+
+    $books = $library->getBooks();
+
+    // Return the file
+    echo Pre::render($books);
+
+});
+
+
+Route::get('/practice-creating', function() {
+
+    # Instantiate a new Book model class
+    $book = new Book();
+
+    # Set
+    $book->title = 'The Great Gatsby';
+    $book->author = 'F. Scott Fiztgerald';
+    $book->published = 1925;
+    $book->cover = 'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG';
+    $book->purchase_link = 'http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565';
+
+    # This is where the Eloquent ORM magic happens
+    $book->save();
+
+    return 'A new book has been added! Check your database to see...';
+
+});
+
+
 Route::get('/practice-reading', function() {
 
     # The all() method will fetch all the rows from a Model/table
@@ -80,7 +326,6 @@ Route::get('/practice-updating', function() {
 });
 
 
-// Deleting
 Route::get('/practice-deleting', function() {
 
     # First get a book to delete
@@ -102,59 +347,31 @@ Route::get('/practice-deleting', function() {
 });
 
 
-//Using eloquent to create--add new book
-Route::get('/practice-create', function() {
 
-    $book = new Book(); //Model, aka my ORM object (instantiate)
+# Show the form
+Route::get('/ajax-example', function() {
 
-    $book->title = 'Cat in the Hat';
-    $book->author = 'Dr. Seuss';
-    $book->published = 1960;
+   return View::make('ajax-example');
 
-    $book->save();
-
-    return 'Your book has been added';
 });
 
-/* 
-The best way to fill your tables with sample/test data is using Laravel's Seeding feature.
-Before we get to that, though, here's a quick-and-dirty practice route that will
-throw three books into the `books` table.
-*/
-Route::get('/seed', function() {
-    # Build the raw SQL query
-    $sql = "INSERT INTO books (author,title,published,cover,purchase_link) VALUES 
-            ('F. Scott Fitzgerald','The Great Gatsby',1925,'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG','http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565'),
-            ('Sylvia Plath','The Bell Jar',1963,'http://img1.imagesbn.com/p/9780061148514_p0_v2_s114x166.JPG','http://www.barnesandnoble.com/w/bell-jar-sylvia-plath/1100550703?ean=9780061148514'),
-            ('Maya Angelou','I Know Why the Caged Bird Sings',1969,'http://img1.imagesbn.com/p/9780345514400_p0_v1_s114x166.JPG','http://www.barnesandnoble.com/w/i-know-why-the-caged-bird-sings-maya-angelou/1100392955?ean=9780345514400')
-            ";
-    # Run the SQL query
-    echo DB::statement($sql);
-    # Get all the books just to test it worked
-    $books = DB::table('books')->get();
-    # Print all the books
-    echo Paste\Pre::render($books,'');
-});
+# Process the form - this is triggered by Ajax
+Route::post('/ajax-example', array('before'=>'csrf', function() {
 
-/* example of database query, lecture 9 
-Route::get('/test', function() {
-# Returns and object of books
-$books = DB::table('books')->get();
+    $data = var_dump($_POST);
 
-foreach ($books as $book) {
-    echo $book->title."<br>";
-    }
-});*/
+    $data .= '<br>Your name reversed is '.strrev($_POST['name']);
 
-/* example of database query with where filter, lecture 9 
-Route::get('/test2', function() {
-    $books = DB::table('books')->where('author', 'LIKE', '%Scott%')->get();
+    return $data;
 
-foreach($books as $book) {
-    echo $book->title;
-}
-});*/
+}));
 
+
+
+
+/*-------------------------------------------------------------------------------------------------
+3. Debugging and testing
+-------------------------------------------------------------------------------------------------*/
 # /app/routes.php
 Route::get('/debug', function() {
 
@@ -192,7 +409,7 @@ Route::get('/debug', function() {
         echo '<strong style="background-color:green; padding:5px;">Connection confirmed</strong>';
         echo "<br><br>Your Databases:<br><br>";
         print_r($results);
-    } 
+    }
     catch (Exception $e) {
         echo '<strong style="background-color:crimson; padding:5px;">Caught exception: ', $e->getMessage(), "</strong>\n";
     }
@@ -202,6 +419,9 @@ Route::get('/debug', function() {
 });
 
 
+/*
+Test to make sure we can connect to MySQL
+*/
 Route::get('mysql-test', function() {
 
     # Print environment
@@ -216,201 +436,151 @@ Route::get('mysql-test', function() {
 });
 
 
+/*
+When testing environments you can use this route to trigger an error to see what your debugging settings are doing.
+*/
+Route::get('/trigger-error',function() {
 
-Route::get('/get-environment',function() {
-
-    echo "Environment: ".App::environment();
-
-});
-
-// Homepage
-Route::get('/', function() {
-	
-    return View::make('index');
+    # Class Foobar should not exist, so this should create an error
+    $foo = new Foobar;
 
 });
 
 
 
 
-// List all books / search
-// function($format = 'html') defaults the view to html
-# List all books / search
-# List all books / search
-Route::get('/list/{format?}', function($format = 'html') {
-    $query = Input::get('query');
-    if($query) {
-    $books = Book::where('author','LIKE', "%$query%")->orWhere('title','LIKE',"%$query%")->get();
-    }
-    else {
-    $books = Book::all();
-    }
-    if($format == 'json') {
-    return 'JSON Version';
-    }
-    elseif($format == 'pdf') {
-    return 'PDF Version;';
-    }
-    else {
-    return View::make('list')
-    ->with('books', $books)
-    ->with('query', $query);
-    }
-});
+/*-------------------------------------------------------------------------------------------------
+4. Helpers
+-------------------------------------------------------------------------------------------------*/
+/*
+The best way to fill your tables with sample/test data is using Laravel's Seeding feature.
+Before we get to that, though, here's a quick-and-dirty practice route that will
+throw three books into the `books` table.
+*/
+Route::get('/seed-books', function() {
 
-Route::get('/test', function() {
+return 'This seed will no longer work because the books table is no longer embedded with the author.';
 
-  /* $author = new Author();
-    $author->name = 'F. Scott Fitzgerald';
-    $author->save();
+    # Build the raw SQL query
+    $sql = "INSERT INTO books (author,title,published,cover,purchase_link) VALUES
+            ('F. Scott Fitzgerald','The Great Gatsby',1925,'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG','http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565'),
+            ('Sylvia Plath','The Bell Jar',1963,'http://img1.imagesbn.com/p/9780061148514_p0_v2_s114x166.JPG','http://www.barnesandnoble.com/w/bell-jar-sylvia-plath/1100550703?ean=9780061148514'),
+            ('Maya Angelou','I Know Why the Caged Bird Sings',1969,'http://img1.imagesbn.com/p/9780345514400_p0_v1_s114x166.JPG','http://www.barnesandnoble.com/w/i-know-why-the-caged-bird-sings-maya-angelou/1100392955?ean=9780345514400')
+            ";
 
-    $book = new Book();
-    $book->title = 'The Great Gatsby';
-    $book->author_id = $author->id; //connects foreign key to author
-    $book->published = 1925;
-    $book->cover = 'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG';
-    $book->purchase_link = 'http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565';
-    $book->save(); 
+    # Run the SQL query
+    echo DB::statement($sql);
 
-   $author = new Author();
-    $author->name = 'Sylvia Plath';
-    $author->save();
+    # Get all the books just to test it worked
+    $books = DB::table('books')->get();
 
-    $book = new Book();
-    $book->title = 'The Bell Jar';
-    $book->author_id = $author->id; //connects foreign key to author
-    $book->published = 1963;
-    $book->cover = 'http://img1.imagesbn.com/p/9780061148514_p0_v2_s114x166.JPG';
-    $book->purchase_link = 'http://www.barnesandnoble.com/w/bell-jar-sylvia-plath/1100550703?ean=9780061148514';
-    $book->save(); 
-
-    $author = new Author();
-    $author->name = 'Maya Angelou';
-    $author->save();
-
-    $book = new Book();
-    $book->title = 'I Know Why the Caged Bird Sings';
-    $book->author_id = $author->id; //connects foreign key to author
-    $book->published = 1969;
-    $book->cover = 'http://img1.imagesbn.com/p/9780345514400_p0_v1_s114x166.JPG';
-    $book->purchase_link = 'http://www.barnesandnoble.com/w/i-know-why-the-caged-bird-sings-maya-angelou/1100392955?ean=9780345514400';
-    $book->save();  
-
-     # w/o eager loading: 7 Queries
-    //$books = Book::with('author')->get();
-    # w/ eager loading: 3 Queries
-    #$books = Book::with('author')->with('tags')->get(); */
-
-   $books = Book::with('author', 'tags')->get();
-    foreach($books as $book) {
-        echo $book->title."<br>";
-        echo $book->author->name."<br>";
-        foreach($book->tags as $tag) {
-            echo $tag->name."<br>";
-        }
-        echo "<br><br>"; 
-    } 
-
-   /* $author = new Author();
-
-    $author->name = 'Dayle Reese';
-    $author->save();
-
-    $book = new Book();
-    $book->title = 'CodeBright';
-    $book->author_id = $author->id;
-
-    $book->save(); */
-
-  /*  $tag = new Tag;
-    $tag->name = 'novel';
-    $tag->save();
-
-    $book = Book::first();
-    $book->tags()->attach($tag); */
-
-}); 
-
-
-
-
-// Display the form for a new book
-Route::get('/add', function() {
-
-    return View::make('add');
-
-});
-
-// Process form for a new book, check that csrf token is present and valid
-Route::post('/add', array('before'=>'csrf',
-    function() {
-
-    var_dump($_POST);
-
-    $book = new Book();
-    DB::statement('SET FOREIGN_KEY_CHECKS=0');
-    $book->title = $_POST['title']; /* same as $book->title = Input::get('title'); */
- /* can pass multiple fields in array */
-    $book->save();
-    //can use a for loop to add multiple books
-
-    return Redirect::to('/list');
-}));
-
-
-
-
-// Display the form to edit a book
-Route::get('/edit/{title}', function($title) {
-        
-        return View::make('edit');
-
-});
-
-// Process form for a edit book
-Route::post('/edit/', function() {
-   # First get a book to update
-    $book = Book::where('book', 'LIKE', '%query%')->first();
-    # If we found the book, update it
-    if($book) {
-    # Give it a different title
-    $book->title = $_POST['title'];
-    # Save the changes
-    $book->save();
-    return "Update complete; check the database to see if your update worked...";
-    }
-    else {
-    return "Book not found, can't update.";
-    }
+    # Print all the books
+    echo Paste\Pre::render($books,'');
 
 });
 
 
-// Test route to load and output books
-Route::get('/data', function() {
+Route::get('/clean', function() {
 
-	//Get the file
-	//$books = File::get(app_path().'/database/books.json');
+    $clean = new Clean();
 
-	// Convert to an array
-	//$books = json_decode($books, true);
+    return 'Done';
 
-	$library = new Library();
-	$library->setPath(app_path().'/database/books.json');
-	$books = $library->getBooks();
-	
-	// Return the file
-	echo Pre::render($books);
+});
+
+
+Route::get('/seed', function() {
+
+    $clean = new Clean();
+
+    # Authors
+    $fitzgerald = new Author;
+    $fitzgerald->name = 'F. Scott Fitzgerald';
+    $fitzgerald->birth_date = '1896-09-24';
+    $fitzgerald->save();
+
+    $plath = new Author;
+    $plath->name = 'Sylvia Plath';
+    $plath->birth_date = '1932-10-27';
+    $plath->save();
+
+    $angelou = new Author;
+    $angelou->name = 'Maya Angelou';
+    $angelou->birth_date = '1928-04-04';
+    $angelou->save();
+
+    # Tags (Created using the Model Create shortcut method)
+    # Note: Tags model must have `protected $fillable = array('name');` in order for this to work
+    $novel         = Tag::create(array('name' => 'novel'));
+    $fiction       = Tag::create(array('name' => 'fiction'));
+    $nonfiction    = Tag::create(array('name' => 'nonfiction'));
+    $classic       = Tag::create(array('name' => 'classic'));
+    $wealth        = Tag::create(array('name' => 'wealth'));
+    $women         = Tag::create(array('name' => 'women'));
+    $autobiography = Tag::create(array('name' => 'autobiography'));
+
+    # Books
+    $gatsby = new Book;
+    $gatsby->title = 'The Great Gatsby';
+    $gatsby->published = 1925;
+    $gatsby->cover = 'http://img2.imagesbn.com/p/9780743273565_p0_v4_s114x166.JPG';
+    $gatsby->purchase_link = 'http://www.barnesandnoble.com/w/the-great-gatsby-francis-scott-fitzgerald/1116668135?ean=9780743273565';
+
+    # Associate has to be called *before* the book is created (save())
+    $gatsby->author()->associate($fitzgerald); # Equivalent of $gatsby->author_id = $fitzgerald->id
+    $gatsby->save();
+
+    # Attach has to be called *after* the book is created (save()),
+    # since resulting `book_id` is needed in the book_tag pivot table
+    $gatsby->tags()->attach($novel);
+    $gatsby->tags()->attach($fiction);
+    $gatsby->tags()->attach($classic);
+    $gatsby->tags()->attach($wealth);
+
+    $belljar = new Book;
+    $belljar->title = 'The Bell Jar';
+    $belljar->published = 1963;
+    $belljar->cover = 'http://img1.imagesbn.com/p/9780061148514_p0_v2_s114x166.JPG';
+    $belljar->purchase_link = 'http://www.barnesandnoble.com/w/bell-jar-sylvia-plath/1100550703?ean=9780061148514';
+    $belljar->author()->associate($plath);
+    $belljar->save();
+
+    $belljar->tags()->attach($novel);
+    $belljar->tags()->attach($fiction);
+    $belljar->tags()->attach($classic);
+    $belljar->tags()->attach($women);
+
+    $cagedbird = new Book;
+    $cagedbird->title = 'I Know Why the Caged Bird Sings';
+    $cagedbird->published = 1969;
+    $cagedbird->cover = 'http://img1.imagesbn.com/p/9780345514400_p0_v1_s114x166.JPG';
+    $cagedbird->purchase_link = 'http://www.barnesandnoble.com/w/i-know-why-the-caged-bird-sings-maya-angelou/1100392955?ean=9780345514400';
+    $cagedbird->author()->associate($angelou);
+    $cagedbird->save();
+    $cagedbird->tags()->attach($autobiography);
+    $cagedbird->tags()->attach($nonfiction);
+    $cagedbird->tags()->attach($classic);
+    $cagedbird->tags()->attach($women);
+
+    return 'Done';
+
 });
 
 
 
 
+/*
+Print all available routes
+*/
+Route::get('/routes', function() {
 
+    $routeCollection = Route::getRoutes();
 
+    foreach($routeCollection as $value) {
+        echo "<a href='/".$value->getPath()."' target='_blank'>".$value->getPath()."</a><br>";
+    }
 
-
-
+});
 
 
 

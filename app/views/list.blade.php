@@ -5,30 +5,46 @@
 @stop
 
 @section('content')
+
 	<h1>Books</h1>
 
 	<div>
 		View as:
-		<a href='/list/json' target='_blank'>JSON</a> | 
+		<a href='/list/json' target='_blank'>JSON</a> |
 		<a href='/list/pdf' target='_blank'>PDF</a>
 	</div>
 
-	<h2>You searched for {{{ $query }}}</h2>
 
-	@foreach($books as $book)
-		<section class='book'>
-			<h2>{{ $book['title'] }}</h2>
-			{{ $book['author->name'] }} ({{$book['published']}})
+	@if($query)
+		<h2>You searched for {{{ $query }}}</h2>
+	@endif
 
-			
-			<img src='{{ $book['cover'] }}'>
-			<br>
-			<a href='{{ $book['purchase_link'] }}'>Purchase...</a>
-		</section>
-	@endforeach
+	@if(sizeof($books) == 0)
+		No results
+	@else
+
+		@foreach($books as $book)
+			<section class='book'>
+
+				<h2>{{ $book['title'] }}</h2>
+
+				<p>
+					<a href='/edit/{{$book['id']}}'>Edit</a>
+				</p>
+
+				<p>
+					{{ $book['author']['name'] }} ({{$book['published']}})
+				</p>
+
+				<img src='{{ $book['cover'] }}'>
+				<br>
+				<a href='{{ $book['purchase_link'] }}'>Purchase...</a>
+			</section>
+		@endforeach
+
+	@endif
 
 @stop
-
 
 
 
