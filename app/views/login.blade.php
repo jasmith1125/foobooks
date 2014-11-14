@@ -1,7 +1,7 @@
 @extends('_master')
 
 @section('title')
-	Log In to Foobooks
+	Log in
 @stop
 
 @section('content')

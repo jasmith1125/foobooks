@@ -8,7 +8,7 @@
 
 	<h1>Add a new book</h1>
 
-	{{ Form::open(array('url' => '/add')) }}
+	{{ Form::open(array('url' => '/book/create')) }}
 
 
 		{{ Form::label('title','Title') }}

@@ -13,7 +13,7 @@
 	<h1>Edit</h1>
 	<h2>{{{ $book['title'] }}}</h2>
 
-	{{ Form::open(array('url' => '/edit')) }}
+	{{ Form::open(array('url' => '/book/edit')) }}
 
 		{{ Form::hidden('id',$book['id']); }}
 

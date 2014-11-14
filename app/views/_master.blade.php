@@ -13,8 +13,7 @@
 
 </head>
 <body>
- <img src="../img/foobooks-logo.png" class="img-responsive">
-    <a href='https://github.com/susanBuck/foobooks'>View on Github</a>
+
     @if(Session::get('flash_message'))
         <div class='flash-message'>{{ Session::get('flash_message') }}</div>
     @endif
@@ -23,14 +22,18 @@
         <ul>
         @if(Auth::check())
             <li><a href='/logout'>Log out {{ Auth::user()->email; }}</a></li>
-            <li><a href='/list'>View all Books</a></li>
-            <li><a href='/add'>+ Add Book</a></li>
+            <li><a href='/book'>View all Books</a></li>
+            <li><a href='/book/create'>+ Add Book</a></li>
         @else
             <li><a href='/signup'>Sign up</a> or <a href='/login'>Log in</a></li>
         @endif
         </ul>
     </nav>
 
+
+    <a href='/'><img class='logo' src='/img/foobooks-logo.png' alt='Foobooks logo'></a>
+
+    <a href='https://github.com/susanBuck/foobooks'>View on Github</a>
 
     @yield('content')
 
