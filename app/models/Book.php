@@ -9,7 +9,7 @@ class Book extends Eloquent {
     * Book belongs to Author
     * Define an inverse one-to-many relationship.
     */
-	public function author() {
+    public function author() {
 
         return $this->belongsTo('Author');
 
@@ -44,6 +44,10 @@ class Book extends Eloquent {
             ->orWhere('title', 'LIKE', "%$query%")
             ->orWhere('published', 'LIKE', "%$query%")
             ->get();
+
+            # Note on what `use` means above:
+            # Closures may inherit variables from the parent scope.
+            # Any such variables must be passed to the `use` language construct.
 
         }
         # Otherwise, just fetch all books

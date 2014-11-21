@@ -7,8 +7,9 @@
 		"laravel/framework": "4.2.*",
 		"paste/pre": "dev-master",
 		"xi/randomstring": "dev-master",
-		"barryvdh/laravel-debugbar": "1.8.0",
-		"fzaninotto/faker": "1.4.0"
+		"badcow/lorem-ipsum": "dev-master",
+		"barryvdh/laravel-debugbar": "1.7.*@dev",
+		"laracasts/utilities": "~1.0"
 	},
 	"autoload": {
 		"classmap": [
@@ -17,12 +18,7 @@
 			"app/models",
 			"app/database/migrations",
 			"app/database/seeds",
-			"app/tests/TestCase.php",
-			"app/models/Library.php",
-			"app/models/Author.php",
-			"app/models/Book.php",
-			"app/models/Tag.php",
-			"app/models/User.php"
+			"app/tests/TestCase.php"
 		]
 	},
 	"scripts": {

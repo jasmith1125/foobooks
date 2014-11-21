@@ -22,7 +22,8 @@ class CreateBooksTable extends Migration {
 			
 			# General data...
 			$table->string('title');
-			$table->integer('author_id')->unsigned(); # Important! FK has to be unsigned because the PK it will reference is auto-incrementing
+			$table->integer('author_id')->unsigned(); 
+			# Important! FK has to be unsigned because the PK it will reference is auto-incrementing
 			$table->integer('published');
 			$table->string('cover');
 			$table->string('purchase_link');

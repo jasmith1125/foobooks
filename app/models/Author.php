@@ -15,6 +15,8 @@ class Author extends Eloquent {
 	* When editing or adding a new book, we need a select dropdown of authors to choose from
 	* A select is easy to generate when you have a key=>value pair to work with
 	* This method will generate a key=>value pair of author id => author name
+	*
+	* @return Array
 	*/
     public static function getIdNamePair() {
 
